@@ -1,0 +1,7 @@
+{
+  "_comment": "Layer3 claim config. Replace 'data' with actual calldata from Layer3 UI.",
+  "name": "Layer3 Claim",
+  "contract": "0x0000000000000000000000000000000000000000",
+  "data": "0x",
+  "hint_tokens": []
+}

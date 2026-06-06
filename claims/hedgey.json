@@ -1,0 +1,31 @@
+{
+  "_readme": [
+    "Hedgey Finance — используется для клеймов токенов с вестингом/локапом.",
+    "Контракт один и тот же на всех сетях: 0xe9c01f928296359ba1d0ad1000cc9bf972cb0026",
+    "",
+    "Как заполнить этот файл — читай claims/HOW-TO-GET-CALLDATA.md",
+    "",
+    "ВАЖНО: после клейма через Hedgey токены могут прийти НЕ сразу,",
+    "а в виде NFT-плана вестинга. В таком случае rescue не поможет —",
+    "нужно дождаться разлока и тогда клеймить снова."
+  ],
+
+  "name": "Hedgey Claim",
+  "network": "base",
+
+  "contract": "0xe9c01f928296359ba1d0ad1000cc9bf972cb0026",
+
+  "data": "ЗАМЕНИТЬ — см. claims/HOW-TO-GET-CALLDATA.md",
+
+  "hint_tokens": [
+    "ЗАМЕНИТЬ — адрес токена который придёт после клейма",
+    "Найти можно на странице клейма или в транзакциях других клеймеров"
+  ],
+
+  "_hedgey_abi_reference": {
+    "function": "claimTokens",
+    "signature": "claimTokens(bytes16 campaignId, bytes32[] proof, uint256 claimAmount)",
+    "selector": "0xd6eecb00",
+    "note": "campaignId это bytes16 (16 байт), не bytes32. Не перепутай при ручном кодировании."
+  }
+}

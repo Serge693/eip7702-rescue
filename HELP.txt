@@ -1,0 +1,280 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                        EIP-7702 RESCUE TOOL — HELP                         ║
+║                     English below / Русский ниже                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ENGLISH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHAT THIS TOOL DOES
+───────────────────
+Your wallet is hacked. A sweeper bot grabs everything that arrives in seconds.
+This tool beats the bot by doing claim + transfer in ONE transaction — so
+tokens never sit in the compromised wallet long enough to be stolen.
+
+COMMANDS
+────────
+
+  scan [network]
+    Show balances on the compromised wallet. No transactions sent.
+
+    Examples:
+      npx tsx src/index.ts scan
+      npx tsx src/index.ts scan base
+
+  rescue <network> [--claim <file>] [--dry-run]
+    Atomic rescue: claim + sweep all tokens in a single transaction.
+    Always run with --dry-run first to verify everything looks correct.
+
+    Examples:
+      npx tsx src/index.ts rescue base --dry-run
+      npx tsx src/index.ts rescue base --claim claims/l3.json --dry-run
+      npx tsx src/index.ts rescue base --claim claims/l3.json
+      npx tsx src/index.ts rescue base   (sweep only, no claim)
+
+  guard [network]
+    24/7 daemon. Watches for ANY incoming transfer and sweeps immediately.
+    Use while waiting for airdrops (INK, BASE, etc.) that could arrive any time.
+    Leave running in a terminal or on a server.
+
+    Examples:
+      npx tsx src/index.ts guard base
+      npx tsx src/index.ts guard         (all networks)
+
+  deploy [network]
+    Deploy the Rescuer smart contract. Do this once per network.
+    After deploy, add the printed address to .env as RESCUER_<NETWORK>=0x...
+
+    Examples:
+      npx tsx src/index.ts deploy base
+      npx tsx src/index.ts deploy        (all networks)
+
+  (first time only) npm run compile
+    Compile contracts/Rescuer.sol. Must be done before first deploy.
+
+AVAILABLE NETWORKS
+──────────────────
+  base       — Base (Coinbase L2)
+  ethereum   — Ethereum mainnet
+  ink        — Ink (Kraken L2)
+  arbitrum   — Arbitrum One
+  optimism   — Optimism
+  polygon    — Polygon
+
+  To add a new network: edit src/networks.ts and run deploy.
+
+REQUIRED .env VARIABLES
+────────────────────────
+  SOURCE_PRIVATE_KEY      Private key of the compromised wallet
+  SPONSOR_PRIVATE_KEY     Private key of wallet that pays gas (keep it funded!)
+  DESTINATION_ADDRESS     Public address of your safe wallet
+
+OPTIONAL .env VARIABLES
+────────────────────────
+  RESCUER_BASE            Address of pre-deployed Rescuer on Base
+  RESCUER_ETHEREUM        Address of pre-deployed Rescuer on Ethereum
+  RESCUER_<NETWORK>       Same for any other network (saves gas)
+  RPC_URL_BASE            Custom RPC URL for Base (recommended for guard mode)
+  RPC_URL_<NETWORK>       Custom RPC for any network
+  SPONSOR_MIN_BALANCE     Warn if sponsor ETH drops below this (default: 0.005)
+  DRY_RUN                 Set to true to simulate without sending (default: false)
+
+CLAIM CONFIG FORMAT
+────────────────────
+  Create a JSON file in claims/ folder:
+
+  {
+    "name":        "Human-readable name",
+    "network":     "base",
+    "contract":    "0x...claim contract address...",
+    "data":        "0x...calldata...",
+    "hint_tokens": ["0x...expected token address..."]
+  }
+
+  How to get contract and data:
+    1. Go to the claim page in your browser
+    2. Connect the compromised wallet
+    3. Click Claim — MetaMask opens with a transaction request
+    4. DO NOT CONFIRM — just look at the data
+    5. Copy "To" field → contract
+    6. Copy "Data" field → data
+    7. Cancel in MetaMask
+
+  Full guide: see claims/HOW-TO-GET-CALLDATA.md
+
+FIRST-TIME SETUP (step by step)
+────────────────────────────────
+  1. npm install
+  2. cp .env.example .env
+  3. Fill in SOURCE_PRIVATE_KEY, SPONSOR_PRIVATE_KEY, DESTINATION_ADDRESS
+  4. npm run compile
+  5. npx tsx src/index.ts deploy base
+  6. Add RESCUER_BASE=0x... to .env (printed by deploy command)
+  7. npx tsx src/index.ts scan base     ← check balances
+  8. npx tsx src/index.ts rescue base --dry-run   ← test
+  9. npx tsx src/index.ts rescue base             ← execute
+
+TIPS
+────
+  • Always dry-run before executing a rescue
+  • hint_tokens: add ALL possible token variants (wrapped, unwrapped, etc.)
+    Missing one = losing it. The Plume incident happened this way.
+  • For guard mode: use a paid RPC with WebSocket support for faster detection
+  • Keep sponsor wallet funded — if it runs out of ETH, nothing works
+  • The tool auto-discovers tokens via Transfer logs, but hints make it faster
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  РУССКИЙ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ЧТО ДЕЛАЕТ ЭТОТ ИНСТРУМЕНТ
+───────────────────────────
+Твой кошелёк взломан. Бот-свипер забирает всё что приходит за секунды.
+Инструмент обходит бота: клейм + перевод происходят в ОДНОЙ транзакции —
+токены не задерживаются в скомпрометированном кошельке и боту нечего украсть.
+
+КОМАНДЫ
+───────
+
+  scan [сеть]
+    Показать балансы на скомпрометированном кошельке. Транзакции не отправляет.
+
+    Примеры:
+      npx tsx src/index.ts scan
+      npx tsx src/index.ts scan base
+
+  rescue <сеть> [--claim <файл>] [--dry-run]
+    Атомарное спасение: клейм + sweep всех токенов в одной транзакции.
+    ВСЕГДА сначала запускай с --dry-run чтобы проверить что всё верно.
+
+    Примеры:
+      npx tsx src/index.ts rescue base --dry-run
+      npx tsx src/index.ts rescue base --claim claims/l3.json --dry-run
+      npx tsx src/index.ts rescue base --claim claims/l3.json
+      npx tsx src/index.ts rescue base   (только sweep, без клейма)
+
+  guard [сеть]
+    Демон 24/7. Следит за ЛЮБЫМ входящим переводом и немедленно выметает.
+    Используй пока ждёшь аирдропы (INK, BASE и т.д.) которые придут в
+    неизвестный момент. Оставь работать в терминале или на сервере.
+
+    Примеры:
+      npx tsx src/index.ts guard base
+      npx tsx src/index.ts guard         (все сети)
+
+  deploy [сеть]
+    Задеплоить смарт-контракт Rescuer. Делается один раз на каждую сеть.
+    После деплоя добавь напечатанный адрес в .env как RESCUER_<СЕТЬ>=0x...
+
+    Примеры:
+      npx tsx src/index.ts deploy base
+      npx tsx src/index.ts deploy        (все сети)
+
+  (только первый раз) npm run compile
+    Скомпилировать contracts/Rescuer.sol. Нужно сделать до первого deploy.
+
+ДОСТУПНЫЕ СЕТИ
+──────────────
+  base       — Base (L2 от Coinbase)
+  ethereum   — Ethereum mainnet
+  ink        — Ink (L2 от Kraken)
+  arbitrum   — Arbitrum One
+  optimism   — Optimism
+  polygon    — Polygon
+
+  Добавить новую сеть: отредактируй src/networks.ts и запусти deploy.
+
+ОБЯЗАТЕЛЬНЫЕ ПЕРЕМЕННЫЕ .env
+──────────────────────────────
+  SOURCE_PRIVATE_KEY      Приватный ключ скомпрометированного кошелька
+  SPONSOR_PRIVATE_KEY     Приватный ключ кошелька который платит газ (держи пополненным!)
+  DESTINATION_ADDRESS     ПУБЛИЧНЫЙ адрес безопасного кошелька (не приватный ключ!)
+
+НЕОБЯЗАТЕЛЬНЫЕ ПЕРЕМЕННЫЕ .env
+────────────────────────────────
+  RESCUER_BASE            Адрес задеплоенного Rescuer на Base
+  RESCUER_ETHEREUM        Адрес задеплоенного Rescuer на Ethereum
+  RESCUER_<СЕТЬ>          То же для любой другой сети (экономит газ)
+  RPC_URL_BASE            Кастомный RPC для Base (рекомендуется для guard)
+  RPC_URL_<СЕТЬ>          Кастомный RPC для любой сети
+  SPONSOR_MIN_BALANCE     Предупреждать если ETH спонсора ниже (по умолч: 0.005)
+  DRY_RUN                 true = симуляция без отправки транзакций (по умолч: false)
+
+ФОРМАТ КОНФИГА КЛЕЙМА
+──────────────────────
+  Создай JSON файл в папке claims/:
+
+  {
+    "name":        "Название клейма",
+    "network":     "base",
+    "contract":    "0x...адрес контракта клейма...",
+    "data":        "0x...calldata...",
+    "hint_tokens": ["0x...адрес ожидаемого токена..."]
+  }
+
+  Как получить contract и data:
+    1. Открой страницу клейма в браузере
+    2. Подключи скомпрометированный кошелёк
+    3. Нажми Claim — MetaMask откроется с запросом транзакции
+    4. НЕ ПОДТВЕРЖДАЙ — только смотри данные
+    5. Скопируй поле "To" → вставь в contract
+    6. Скопируй поле "Data" (длинная строка с 0x) → вставь в data
+    7. Нажми Отклонить в MetaMask
+
+  Полная инструкция: читай claims/HOW-TO-GET-CALLDATA.md
+
+ПЕРВЫЙ ЗАПУСК (шаг за шагом)
+──────────────────────────────
+  1. npm install
+  2. cp .env.example .env
+  3. Заполни SOURCE_PRIVATE_KEY, SPONSOR_PRIVATE_KEY, DESTINATION_ADDRESS
+  4. npm run compile
+  5. npx tsx src/index.ts deploy base
+  6. Добавь RESCUER_BASE=0x... в .env (адрес напечатает команда deploy)
+  7. npx tsx src/index.ts scan base     ← проверь балансы
+  8. npx tsx src/index.ts rescue base --dry-run   ← тест
+  9. npx tsx src/index.ts rescue base             ← выполнить
+
+СОВЕТЫ
+──────
+  • ВСЕГДА делай dry-run перед настоящим rescue
+  • hint_tokens: добавляй ВСЕ возможные варианты токена (wrapped, unwrapped и т.д.)
+    Пропустить один = потерять его. Именно это случилось с Plume.
+  • Для guard режима: используй платный RPC с поддержкой WebSocket — быстрее реакция
+  • Следи чтобы кошелёк спонсора был пополнен — без ETH ничего не работает
+  • Инструмент сам находит токены через Transfer логи, но hint_tokens ускоряет процесс
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FILES IN THIS PROJECT / ФАЙЛЫ ПРОЕКТА
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  contracts/
+    Rescuer.sol           Smart contract (claim + sweep logic)
+    Rescuer.json          Compiled ABI + bytecode (generated by npm run compile)
+
+  src/
+    index.ts              CLI entry point — start here
+    networks.ts           Network definitions — add new networks here
+    tokens.ts             Token auto-discovery via Transfer event logs
+    contract.ts           Deploy + EIP-7702 transaction helpers
+    rescue.ts             One-shot rescue logic
+    guard.ts              24/7 guard daemon logic
+    utils.ts              Shared helpers
+
+  scripts/
+    compile.ts            Compiles Rescuer.sol via solc-js
+
+  claims/
+    HOW-TO-GET-CALLDATA.md   ← READ THIS to prepare claim configs
+    l3.json               Layer3 claim template
+    ofc.json              OFC claim template
+    hedgey.json           Hedgey vesting claim template
+
+  .env.example            Copy to .env and fill in
+  README.md               Full documentation (EN + RU)
+  HELP.txt                This file
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
