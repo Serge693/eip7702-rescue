@@ -21,7 +21,7 @@ export const networks: Record<string, Chain> = {
     id: 1,
     name: "Ethereum",
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: { default: { http: ["https://eth.llamarpc.com"] } },
+    rpcUrls: { default: { http: ["https://ethereum.publicnode.com"] } },
     blockExplorers: { default: { name: "Etherscan", url: "https://etherscan.io" } },
   }),
 
@@ -53,7 +53,7 @@ export const networks: Record<string, Chain> = {
     id: 137,
     name: "Polygon",
     nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
-    rpcUrls: { default: { http: ["https://polygon-rpc.com"] } },
+    rpcUrls: { default: { http: ["https://polygon.publicnode.com"] } },
     blockExplorers: { default: { name: "Polygonscan", url: "https://polygonscan.com" } },
   }),
 };
