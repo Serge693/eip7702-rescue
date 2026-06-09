@@ -43,6 +43,27 @@ COMMANDS
       npx tsx src/index.ts guard base
       npx tsx src/index.ts guard         (all networks)
 
+  intercept <network> [--port 8545] [--output claims/intercepted.json]
+    Start a local RPC proxy that captures claim calldata from MetaMask
+    WITHOUT sending the transaction to the network.
+
+    How to use:
+      1. Run: npx tsx src/index.ts intercept base
+      2. In MetaMask: Settings → Networks → Base → RPC URL → http://localhost:8545
+      3. Go to the claim site, connect wallet, click Claim
+      4. Confirm in MetaMask (proxy intercepts and blocks, tx never sent)
+      5. Switch MetaMask RPC back to normal
+      6. Run: npx tsx src/index.ts rescue base --claim claims/intercepted.json
+
+    Why this is better than copying from MetaMask manually:
+      No risk of typos. Captures the exact bytes MetaMask would send.
+      Works with any claim site. No need to understand the ABI.
+
+    Examples:
+      npx tsx src/index.ts intercept base
+      npx tsx src/index.ts intercept base --port 9999
+      npx tsx src/index.ts intercept base --output claims/ofc.json
+
   deploy [network]
     Deploy the Rescuer smart contract. Do this once per network.
     After deploy, add the printed address to .env as RESCUER_<NETWORK>=0x...
@@ -164,6 +185,27 @@ TIPS
     Примеры:
       npx tsx src/index.ts guard base
       npx tsx src/index.ts guard         (все сети)
+
+  intercept <сеть> [--port 8545] [--output claims/intercepted.json]
+    Запускает локальный RPC прокси который перехватывает calldata клейма из MetaMask
+    БЕЗ отправки транзакции в сеть.
+
+    Как использовать:
+      1. Запусти: npx tsx src/index.ts intercept base
+      2. В MetaMask: Настройки → Сети → Base → RPC URL → http://localhost:8545
+      3. Зайди на сайт клейма, подключи кошелёк, нажми Claim
+      4. Подтверди в MetaMask (прокси перехватит и заблокирует, tx не уйдёт)
+      5. Верни MetaMask RPC обратно на нормальный
+      6. Запусти: npx tsx src/index.ts rescue base --claim claims/intercepted.json
+
+    Почему лучше чем копировать вручную:
+      Нет риска опечаток. Захватывает точные байты которые MetaMask отправил бы.
+      Работает с любым сайтом клейма. Не нужно понимать ABI.
+
+    Примеры:
+      npx tsx src/index.ts intercept base
+      npx tsx src/index.ts intercept base --port 9999
+      npx tsx src/index.ts intercept base --output claims/ofc.json
 
   deploy [сеть]
     Задеплоить смарт-контракт Rescuer. Делается один раз на каждую сеть.
