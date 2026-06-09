@@ -60,9 +60,10 @@ function loadClaimConfig(path: string): ClaimConfig {
 export async function runRescue(opts: {
   networkKey: string;
   claimPath?: string;
+  selfClaim?: boolean;
   dryRun?: boolean;
 }) {
-  const { networkKey, claimPath, dryRun } = opts;
+  const { networkKey, claimPath, selfClaim, dryRun } = opts;
 
   const network = networks[networkKey];
   if (!network) throw new Error(`Unknown network: ${networkKey}`);
@@ -157,12 +158,14 @@ export async function runRescue(opts: {
   let label: string;
 
   if (claim) {
+    const fn = selfClaim ? "selfClaimAndSweep" : "claimAndSweepAll";
     calldata = encodeFunctionData({
       abi: RESCUER_ABI,
-      functionName: "claimAndSweepAll",
+      functionName: fn,
       args: [claim.contract, claim.data, allTokens, destination],
     });
-    label = "claimAndSweepAll()";
+    label = fn + "()";
+    if (selfClaim) log(`  ${pc.yellow("Mode: selfClaimAndSweep (delegatecall) — for signature-based claims like OFC")}`);
   } else {
     calldata = encodeFunctionData({
       abi: RESCUER_ABI,

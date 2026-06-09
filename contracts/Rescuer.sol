@@ -5,45 +5,32 @@ pragma solidity ^0.8.23;
  * @title Rescuer
  * @notice Stateless EIP-7702 rescue contract.
  *
- * Deployed ONCE per network. Any compromised wallet delegates to this address
- * via EIP-7702, then the sponsor calls one of the rescue functions.
+ * TWO claim modes:
  *
- * Key design:
- *  - No constructor args, no storage — fully stateless.
- *  - destination is always passed as calldata (never stored).
- *  - claimAndSweepAll: atomic claim + sweep of ALL tokens found.
- *  - sweepAll: sweep without claim (for airdrops that arrive directly).
- *  - receive(): silently accepts ETH (auto-forwarding handled off-chain via sweepAll).
+ * 1. claimAndSweepAll — uses CALL.
+ *    msg.sender = Rescuer contract address.
+ *    Works for: claims that don't verify msg.sender (Hedgey, most merkle drops).
  *
- * Compiled: solc 0.8.23, optimizer 200 runs.
+ * 2. selfClaimAndSweep — uses DELEGATECALL.
+ *    msg.sender = original caller (sponsor), address(this) = source wallet.
+ *    Works for: signature-based claims (OFC, permit-style) where the
+ *    signature is over (amount, deadline, msg.sender) and msg.sender
+ *    must equal the compromised wallet address.
+ *
+ * Use selfClaimAndSweep when the claim contract verifies msg.sender
+ * against a signature provided in calldata.
  */
 contract Rescuer {
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Errors
-    // ─────────────────────────────────────────────────────────────────────────
 
     error ClaimFailed(bytes reason);
     error EthTransferFailed();
     error TokenTransferFailed(address token);
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Receive — accept ETH silently (airdrops, unwraps, etc.)
-    // ─────────────────────────────────────────────────────────────────────────
-
     receive() external payable {}
 
     // ─────────────────────────────────────────────────────────────────────────
-    // claimAndSweepAll
-    //
-    // Atomic: claim → sweep ETH → sweep all tokens with non-zero balance.
-    //
-    // @param claimContract  Address of the claim/vesting contract to call.
-    // @param claimData      Calldata to send to claimContract.
-    // @param tokens         Candidate token addresses to sweep after claim.
-    //                       Pass every token you suspect might arrive.
-    //                       Tokens with zero balance are silently skipped.
-    // @param destination    Where all rescued assets go.
+    // claimAndSweepAll — CALL (msg.sender = Rescuer)
+    // Use for: Hedgey, standard merkle drops, anything not checking msg.sender
     // ─────────────────────────────────────────────────────────────────────────
     function claimAndSweepAll(
         address claimContract,
@@ -51,25 +38,36 @@ contract Rescuer {
         address[] calldata tokens,
         address destination
     ) external {
-        // 1. Claim
         (bool ok, bytes memory reason) = claimContract.call(claimData);
         if (!ok) revert ClaimFailed(reason);
-
-        // 2. Sweep ETH
         _sweepEth(destination);
-
-        // 3. Sweep all candidate tokens
         _sweepTokens(tokens, destination);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // sweepAll
+    // selfClaimAndSweep — DELEGATECALL (msg.sender preserved = sponsor,
+    //                                   address(this) = source wallet)
     //
-    // No claim — just sweep ETH and tokens.
-    // Used by guard daemon when an airdrop arrives directly.
+    // Use for: signature-based claims where signature covers msg.sender
+    // and msg.sender must be the compromised wallet (e.g. OFC claim).
     //
-    // @param tokens       Candidate token addresses.
-    // @param destination  Where assets go.
+    // WARNING: delegatecall runs the claim contract's code in the context
+    // of the source wallet. Only use with trusted, audited claim contracts.
+    // ─────────────────────────────────────────────────────────────────────────
+    function selfClaimAndSweep(
+        address claimContract,
+        bytes calldata claimData,
+        address[] calldata tokens,
+        address destination
+    ) external {
+        (bool ok, bytes memory reason) = claimContract.delegatecall(claimData);
+        if (!ok) revert ClaimFailed(reason);
+        _sweepEth(destination);
+        _sweepTokens(tokens, destination);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // sweepAll — no claim, just sweep (for direct airdrops)
     // ─────────────────────────────────────────────────────────────────────────
     function sweepAll(
         address[] calldata tokens,
@@ -79,9 +77,6 @@ contract Rescuer {
         _sweepTokens(tokens, destination);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // sweepEth — sweep only ETH (fast path for native airdrops)
-    // ─────────────────────────────────────────────────────────────────────────
     function sweepEth(address destination) external {
         _sweepEth(destination);
     }
@@ -107,7 +102,6 @@ contract Rescuer {
         }
     }
 
-    /// @dev Calls ERC-20 balanceOf(address(this)). Returns 0 on failure.
     function _balanceOf(address token) internal view returns (uint256) {
         (bool ok, bytes memory data) = token.staticcall(
             abi.encodeWithSignature("balanceOf(address)", address(this))
@@ -116,13 +110,11 @@ contract Rescuer {
         return abi.decode(data, (uint256));
     }
 
-    /// @dev Calls ERC-20 transfer(destination, amount). Returns false on failure.
     function _transfer(address token, address to, uint256 amount) internal returns (bool) {
         (bool ok, bytes memory data) = token.call(
             abi.encodeWithSignature("transfer(address,uint256)", to, amount)
         );
         if (!ok) return false;
-        // Handle tokens that return nothing (non-standard ERC-20)
         if (data.length == 0) return true;
         return abi.decode(data, (bool));
     }

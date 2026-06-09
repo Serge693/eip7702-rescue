@@ -24,6 +24,7 @@ import { networks, getRpcUrl }              from "./networks.js";
 import { discoverTokens, getTokenBalances } from "./tokens.js";
 import { runRescue }                        from "./rescue.js";
 import { runGuard }                         from "./guard.js";
+import { runIntercept }                     from "./intercept.js";
 import { errorAndExit }                     from "./utils.js";
 import { privateKeyToAccount }              from "viem/accounts";
 
@@ -35,7 +36,7 @@ function help(): never {
   console.log(pc.bold("Commands:"));
   console.log("  rescue <network> [--claim <file>] [--dry-run]");
   console.log("    Atomic claim + sweepAll in one EIP-7702 transaction.");
-  console.log("    --claim <file>   Path to claim config JSON (optional)");
+  console.log("    --claim <file>   Path to claim config JSON (use intercept to capture it)");
   console.log("    --dry-run        Simulate without sending transactions\n");
 
   console.log("  guard [network]");
@@ -184,8 +185,9 @@ async function main() {
       const claimIdx = args.indexOf("--claim");
       const claimPath = claimIdx !== -1 ? args[claimIdx + 1] : undefined;
       const dryRun    = args.includes("--dry-run") || process.env.DRY_RUN === "true";
+      const selfClaim = args.includes("--self-claim");
 
-      await runRescue({ networkKey, claimPath, dryRun });
+      await runRescue({ networkKey, claimPath, selfClaim, dryRun });
       break;
     }
 
@@ -200,6 +202,20 @@ async function main() {
       const networkKey = args[1] && !args[1].startsWith("--") ? args[1] : undefined;
       if (networkKey && !networks[networkKey]) errorAndExit(`Unknown network "${networkKey}"`);
       await runScan(networkKey);
+      break;
+    }
+
+    case "intercept": {
+      const networkKey = args[1];
+      if (!networkKey || networkKey.startsWith("--")) errorAndExit("Usage: intercept <network> [--port <n>] [--output <file>]");
+      if (!networks[networkKey]) errorAndExit(`Unknown network "${networkKey}". Available: ${Object.keys(networks).join(", ")}`);
+
+      const portIdx    = args.indexOf("--port");
+      const outputIdx  = args.indexOf("--output");
+      const port       = portIdx   !== -1 ? parseInt(args[portIdx + 1])   : 8545;
+      const outputPath = outputIdx !== -1 ? args[outputIdx + 1] : "claims/intercepted.json";
+
+      await runIntercept({ networkKey, port, outputPath });
       break;
     }
 

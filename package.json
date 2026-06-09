@@ -4,7 +4,8 @@
   "description": "Rescue funds from compromised wallets using EIP-7702 delegation",
   "type": "module",
   "scripts": {
-    "compile": "tsx scripts/compile.ts",
+    "compile":   "tsx scripts/compile.ts",
+    "intercept": "tsx src/index.ts intercept",
     "rescue":  "tsx src/index.ts rescue",
     "guard":   "tsx src/index.ts guard",
     "scan":    "tsx src/index.ts scan",
